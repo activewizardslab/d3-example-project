@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Bubble Menu</title>
+
+    <style type="text/css">
+    #mainBubble {
+        background: #fff;
+        /* border: solid 1px #ddd;*/
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0);
+        font: 10px sans-serif;
+        height: 90%;
+        position: relative;
+        width: 90%;
+    }
+
+    svg {
+        width: 100%;
+        border: 1px solid #ddd;
+    }
+
+    h2 {
+        text-align: center;
+    }
+    /*    #mainBubble svg {
+          left: 0;
+          position: absolute;
+          top: 0;
+        }
+
+        #mainBubble circle.topBubble {
+          fill: #aaa;
+          stroke: #666;
+          stroke-width: 1.5px;
+         }*/
+    </style>
+    <script type="text/javascript" src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+</head>
+
+<body>
+    <h2>Bubble menu chart</h2>
+    <div id="mainBubble"></div>
+    <script>
+    var w = 1000;
+    var h = Math.ceil(w * 0.5);
+    var oR = 0;
+    var nTop = 0;
+    var len_ch = [];
+
+    var svgContainer = d3.select("#mainBubble")
+        .style("height", h + "px");
+
+    var svg = d3.select("#mainBubble").append("svg")
+        .attr("class", "mainBubbleSVG")
+        .attr("width", w)
+        .attr("height", h).on("mouseleave", function() {
+            return resetBubbles();
+        });
+
+    var mainNote = svg.append("text")
+        .attr("id", "bubbleItemNote")
+        .attr("x", 10)
+        .attr("y", w / 2 - 15)
+        .attr("font-size", 12)
+        .attr("dominant-baseline", "middle")
+        .attr("alignment-baseline", "middle")
+        .style("fill", "#888888");
+
+
+    d3.json("data/main_bubble.json", function(error, root) {
+        console.log(error);
+
+        var bubbleObj = svg.selectAll(".topBubble")
+            .data(root.children)
+            .enter().append("g")
+            .attr("id", function(d, i) {
+                return "topBubbleAndText_" + i
+            });
+
+        console.log(root);
+        nTop = root.children.length;
+        oR = w / (1 + 3 * nTop);
+        // for (var i = 0; i < Things.length; i++) {
+        //     Things[i]
+        // };
+
+        h = Math.ceil(w / nTop * 2.3);
+        svgContainer.style("height", h + "px");
+
+        var colVals = d3.scale.category10();
+
+        bubbleObj.append("circle")
+            .attr("class", "topBubble")
+            .attr("id", function(d, i) {
+                return "topBubble" + i;
+            })
+            .attr("r", function(d) {
+                return oR * 0.9;
+            })
+            .attr("cx", function(d, i) {
+                return oR * (3.2 * (1 + i) - 1);
+            })
+            .attr("cy", (h + oR) / 3)
+            .style("fill", function(d, i) {
+                return colVals(i);
+            }) // #1f77b4
+            .style("opacity", 0.3)
+            .on("mouseover", function(d, i) {
+                return activateBubble(d, i);
+            });
+
+
+        bubbleObj.append("text")
+            .attr("class", "topBubbleText")
+            .attr("x", function(d, i) {
+                return oR * (3.2 * (1 + i) - 1);
+            })
+            .attr("y", (h + oR) / 3)
+            .style("fill", function(d, i) {
+                return colVals(i);
+            }) // #1f77b4
+            .attr("font-size", 24)
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle")
+            .attr("alignment-baseline", "middle")
+            .text(function(d) {
+                return d.name
+            })
+            .on("mouseover", function(d, i) {
+                return activateBubble(d, i);
+            });
+
+
+        for (var iB = 0; iB < nTop; iB++) {
+            var childBubbles = svg.selectAll(".childBubble" + iB)
+                .data(root.children[iB].children)
+                .enter().append("g");
+
+
+            childBubbles.append("circle")
+                .attr("class", "childBubble" + iB)
+                .attr("id", function(d, i) {
+                    return "childBubble_" + iB + "sub_" + i;
+                })
+                .attr("r", function(d) {
+                    return oR / 4.0;
+                })
+                .attr("cx", function(d, i) {
+                    return (oR * (3.2 * (iB + 1) - 1) + oR * 1.3 * Math.cos((i - 3) * 45 / 180 * 3.1415926));
+                })
+                .attr("cy", function(d, i) {
+                    return ((h + oR) / 3 + oR * 1.3 * Math.sin((i - 3) * 45 / 180 * 3.1415926));
+                })
+                .attr("cursor", "pointer")
+                .style("opacity", 0.5)
+                .style("fill", "#EDB8FF")
+
+            .on("click", function(d, i) {
+                    window.open(d.address);
+                })
+                .on("mouseover", function(d, i) {
+                    //window.alert("say something");
+                    var noteText = "";
+                    if (d.note == null || d.note == "") {
+                        noteText = d.address;
+                    } else {
+                        noteText = d.note;
+                    }
+                    d3.select("#bubbleItemNote").text(noteText);
+                })
+                .append("svg:title")
+                .text(function(d) {
+                    return d.address;
+                });
+
+            childBubbles.append("text")
+                .attr("class", "childBubbleText" + iB)
+                .attr("x", function(d, i) {
+                    return (oR * (3.2 * (iB + 1) - 1) + oR * 1.3 * Math.cos((i - 3) * 45 / 180 * 3.1415926));
+                })
+                .attr("y", function(d, i) {
+                    return ((h + oR) / 3 + oR * 1.3 * Math.sin((i - 3) * 45 / 180 * 3.1415926));
+                })
+                .style("opacity", 0.5)
+                .attr("text-anchor", "middle")
+                .style("fill", function(d, i) {
+                    return colVals(iB);
+                }) // #1f77b4
+                .attr("font-size", 6)
+                .attr("cursor", "pointer")
+                .attr("dominant-baseline", "middle")
+                .attr("alignment-baseline", "middle")
+                .text(function(d) {
+                    return d.name
+                })
+                .on("click", function(d, i) {
+                    window.open(d.address);
+                });
+
+            len_ch.push(root.children[iB].children.length);
+
+            for (var iC = 0; iC < root.children[iB].children.length; iC++) {
+
+                // len_ch.push(root.children[iB].children[iC].children.length);
+
+
+                var childBubbles2 = svg.selectAll("childBubble_" + iB + "sub_" + iC)
+                    .data(root.children[iB].children[iC].children)
+                    .enter().append("g");
+
+                childBubbles2.append("circle")
+                    .attr("class", "childBubble_" + iB + "sub_" + iC)
+                    .attr("id", function(d, i) {
+                        return "childBubble_" + iB + "sub_" + iC + 'chi_' + i;
+                    })
+                    .attr("r", function(d) {
+                        return oR / 8.0;
+                    })
+                    .attr("cx", function(d, i) {
+                        return (oR * (3.2 * (iB + 1) - 1) + oR * 1.3 * Math.cos((iC - 3) * 45 / 180 * 3.1415926) + oR * 0.4 * Math.cos((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .attr("cy", function(d, i) {
+                        return ((h + oR) / 3 + oR * 1.3 * Math.sin((iC - 3) * 45 / 180 * 3.1415926) + oR * 0.4 * Math.sin((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .style("opacity", 0)
+                    .style("fill", "#B8EDFF");
+
+                childBubbles2.append("text")
+                    .attr("class", "childBubbleText_" + iB + "sub_" + iC)
+                    .attr("x", function(d, i) {
+                        return (oR * (3.2 * (iB + 1) - 1) + oR * 1.3 * Math.cos((iC - 3) * 45 / 180 * 3.1415926) + oR * 0.4 * Math.cos((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .attr("y", function(d, i) {
+                        return ((h + oR) / 3 + oR * 1.3 * Math.sin((iC - 3) * 45 / 180 * 3.1415926) + oR * 0.4 * Math.sin((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .style("opacity", 0)
+                    .attr("text-anchor", "middle")
+                    .style("fill", function(d, i) {
+                        return colVals(iC);
+                    }) // #1f77b4
+                    .attr("font-size", 6)
+
+                .attr("dominant-baseline", "middle")
+                    .attr("alignment-baseline", "middle")
+                    .text(function(d) {
+                        return d.name
+                    });
+            };
+        }
+
+
+    });
+
+    resetBubbles = function() {
+        // w = window.innerWidth*0.68*0.95;
+        oR = w / (1 + 3 * nTop);
+
+        // h = Math.ceil(w/nTop*2);
+        // svgContainer.style("height",h+"px");
+
+        // mainNote.attr("y",h-15);
+
+        // svg.attr("width", w);
+        // svg.attr("height",h);
+
+        // d3.select("#bubbleItemNote").text("D3.js bubble menu developed by Shipeng Sun (sunsp.gis@gmail.com), Institute of Environment, University of Minnesota, and University of Springfield, Illinois.");
+
+        var t = svg.transition()
+            .duration(650);
+
+        t.selectAll(".topBubble")
+            .attr("r", function(d) {
+                return oR * 0.9;
+            })
+            .attr("cx", function(d, i) {
+                return oR * (3.2 * (1 + i) - 1);
+            })
+            .attr("cy", (h + oR) / 3);
+
+        t.selectAll(".topBubbleText")
+            .attr("font-size", 24)
+            .attr("x", function(d, i) {
+                return oR * (3.2 * (1 + i) - 1);
+            })
+            .attr("y", (h + oR) / 3);
+
+        for (var k = 0; k < nTop; k++) {
+            t.selectAll(".childBubbleText" + k)
+                .attr("x", function(d, i) {
+                    return (oR * (3.2 * (k + 1) - 1) + oR * 1.3 * Math.cos((i - 3) * 45 / 180 * 3.1415926));
+                })
+                .attr("y", function(d, i) {
+                    return ((h + oR) / 3 + oR * 1.3 * Math.sin((i - 3) * 45 / 180 * 3.1415926));
+                })
+                .attr("font-size", 6)
+                .style("opacity", 0.5);
+
+            t.selectAll(".childBubble" + k)
+                .attr("r", function(d) {
+                    return oR / 4.0;
+                })
+                .style("opacity", 0.5)
+                .attr("cx", function(d, i) {
+                    return (oR * (3.2 * (k + 1) - 1) + oR * 1.3 * Math.cos((i - 3) * 45 / 180 * 3.1415926));
+                })
+                .attr("cy", function(d, i) {
+                    return ((h + oR) / 3 + oR * 1.3 * Math.sin((i - 3) * 45 / 180 * 3.1415926));
+                });
+
+
+            for (var j = 0; j < len_ch[k]; j++) {
+
+                t.selectAll(".childBubble_" + k + "sub_" + j)
+                    .attr("cx", function(d, i) {
+                        return (oR * (3.2 * (k + 1) - 1) + oR * 1.3 * Math.cos((j - 3) * 45 / 180 * 3.1415926) + oR * 0.4 * Math.cos((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .attr("cy", function(d, i) {
+                        return ((h + oR) / 3 + oR * 1.3 * Math.sin((j - 3) * 45 / 180 * 3.1415926) + oR * 0.4 * Math.sin((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .attr("r", function() {
+                        return (oR / 8);
+                    })
+                    .style("opacity", function() {
+                        return 0;
+                    });
+
+                t.selectAll(".childBubbleText_" + k + "sub_" + j)
+                    .attr("x", function(d, i) {
+                        return (oR * (3.2 * (k + 1) - 1) + oR * 1.3 * Math.cos((j - 3) * 45 / 180 * 3.1415926) + oR * 0.4 * Math.cos((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .attr("y", function(d, i) {
+                        return ((h + oR) / 3 + oR * 1.3 * Math.sin((j - 3) * 45 / 180 * 3.1415926) + oR * 0.4 * Math.sin((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .attr("font-size", function() {
+                        return 6;
+                    })
+                    .style("opacity", function() {
+                        return 0;
+                    });
+            };
+
+        }
+    }
+
+
+    function activateBubble(d, i) {
+        // increase this bubble and decrease others
+        var t = svg.transition()
+            .duration(d3.event.altKey ? 7500 : 350);
+
+        t.selectAll(".topBubble")
+            .attr("cx", function(d, ii) {
+                if (i == ii) {
+                    // Nothing to change
+                    return oR * (3 * (1 + ii) - 1) - 0.6 * oR * (ii - 1);
+                } else {
+                    // Push away a little bit
+                    if (ii < i) {
+                        // left side
+                        return oR * 0.6 * (3 * (1 + ii) - 1);
+                    } else {
+                        // right side
+                        return oR * (nTop * 3 + 1) - oR * 0.6 * (3.2 * (nTop - ii) - 1);
+                    }
+                }
+            })
+            .attr("r", function(d, ii) {
+                if (i == ii)
+                    return oR * 1.6;
+                else
+                    return oR * 0.7;
+            });
+
+        t.selectAll(".topBubbleText")
+            .attr("x", function(d, ii) {
+                if (i == ii) {
+                    // Nothing to change
+                    return oR * (3 * (1 + ii) - 1) - 0.6 * oR * (ii - 1);
+                } else {
+                    // Push away a little bit
+                    if (ii < i) {
+                        // left side
+                        return oR * 0.6 * (3 * (1 + ii) - 1);
+                    } else {
+                        // right side
+                        return oR * (nTop * 3 + 1) - oR * 0.6 * (3.2 * (nTop - ii) - 1);
+                    }
+                }
+            })
+            .attr("font-size", function(d, ii) {
+                if (i == ii)
+                    return 30 * 1.5;
+                else
+                    return 30 * 0.6;
+            });
+
+        var signSide = -1;
+        var colVals = d3.scale.category10();
+        for (var k = 0; k < nTop; k++) {
+            signSide = 1;
+            if (k < nTop / 2) signSide = 1;
+            t.selectAll(".childBubbleText" + k)
+                .attr("x", function(d, i) {
+                    return (oR * (3 * (k + 1) - 1) - 0.6 * oR * (k - 1) + signSide * oR * 2.7 * Math.cos((i - 1) * 45 / 180 * 3.1415926));
+                })
+                .attr("y", function(d, i) {
+                    return ((h + oR) / 3 + signSide * oR * 2.7 * Math.sin((i - 1) * 45 / 180 * 3.1415926));
+                })
+                .attr("font-size", function() {
+                    return (k == i) ? 12 : 6;
+                })
+                .style("opacity", function() {
+                    return (k == i) ? 1 : 0;
+                });
+
+            t.selectAll(".childBubble" + k)
+                .attr("cx", function(d, i) {
+                    return (oR * (3 * (k + 1) - 1) - 0.6 * oR * (k - 1) + signSide * oR * 2.7 * Math.cos((i - 1) * 45 / 180 * 3.1415926));
+                })
+                .attr("cy", function(d, i) {
+                    return ((h + oR) / 3 + signSide * oR * 2.7 * Math.sin((i - 1) * 45 / 180 * 3.1415926));
+                })
+                .attr("r", function() {
+                    return (k == i) ? (oR * 0.5) : (oR / 3.0);
+                })
+                .style("opacity", function() {
+                    return (k == i) ? 1 : 0;
+                });
+
+            for (var j = 0; j < len_ch[k]; j++) {
+                t.selectAll(".childBubble_" + k + "sub_" + j)
+                    .attr("cx", function(d, i) {
+                        return (oR * (3 * (k + 1) - 1) - 0.6 * oR * (k - 1) + signSide * oR * 2.7 * Math.cos((j - 1) * 45 / 180 * 3.1415926) + oR * 0.8 * Math.cos((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .attr("cy", function(d, i) {
+                        return ((h + oR) / 3 + signSide * oR * 2.7 * Math.sin((j - 1) * 45 / 180 * 3.1415926) + oR * 0.8 * Math.sin((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .attr("r", function() {
+                        return (oR * 0.2);
+                    })
+                    // .style("fill", function(d,i) { return colVals(i); })
+                    .style("opacity", function() {
+                        return (k == i) ? 0.5 : 0;
+                    });
+
+                t.selectAll(".childBubbleText_" + k + "sub_" + j)
+                    .attr("x", function(d, i) {
+                        return (oR * (3 * (k + 1) - 1) - 0.6 * oR * (k - 1) + signSide * oR * 2.7 * Math.cos((j - 1) * 45 / 180 * 3.1415926) + oR * 0.8 * Math.cos((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .attr("y", function(d, i) {
+                        return ((h + oR) / 3 + signSide * oR * 2.7 * Math.sin((j - 1) * 45 / 180 * 3.1415926) + oR * 0.8 * Math.sin((i - 1) * 45 / 180 * 3.1415926));
+                    })
+                    .attr("font-size", function() {
+                        return (k == i) ? 10 : 6;
+                    })
+                    .style("opacity", function() {
+                        return (k == i) ? 1 : 0;
+                    });
+            };
+        }
+    }
+
+    window.onresize = resetBubbles;
+    </script>
+</body>
+
+</html>

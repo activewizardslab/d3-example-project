@@ -1,7 +1,4 @@
-### ActiveWizards D3.js demo projects
-
-1. Real-time dashboard. [Demo](http://real-time-dashboard.activewizards-demos.com)
-2. D3.js charts example:
+## D3.js charts example:
 
 - [Bubble menu](http://demo.activewizards-demos.com/awo178/bubble-menu/)
 - [Forced graph](http://demo.activewizards-demos.com/awo178/forced-graph/)
